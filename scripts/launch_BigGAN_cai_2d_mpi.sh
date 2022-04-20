@@ -1,6 +1,9 @@
 #!/bin/bash
-python train.py \
---dataset I128_hdf5 --parallel --shuffle  --num_workers 2 --batch_size 256 --load_in_mem  \
+source ~/.bashrc
+conda activate autoaug
+cd /work/zhangyq/BigGAN-PyTorch
+python train_cai_2d.py \
+--dataset I128_hdf5 --parallel --shuffle  --num_workers 2 --num_epochs 2 --batch_size 64 --load_in_mem  \
 --num_G_accumulations 8 --num_D_accumulations 8 \
 --num_D_steps 1 --G_lr 1e-4 --D_lr 4e-4 --D_B2 0.999 --G_B2 0.999 \
 --G_attn 64 --D_attn 64 \
@@ -15,3 +18,4 @@ python train.py \
 --ema --use_ema --ema_start 20000 \
 --test_every 2000 --save_every 1000 --num_best_copies 5 --num_save_copies 2 --seed 0 \
 --use_multiepoch_sampler \
+--model BigGAN_2d

@@ -771,7 +771,7 @@ class MetricsLogger(object):
 class MyLogger(object):
   def __init__(self, fname, reinitialize=False, logstyle='%3.3f'):
     self.root = fname
-    if not os.path.exists(self.root):
+    if not os.path.exists(self.root) and os.getenv('LOCAL_RANK')=='0':
       os.mkdir(self.root)
     self.reinitialize = reinitialize
     self.metrics = []
@@ -779,7 +779,7 @@ class MyLogger(object):
 
   # Delete log if re-starting and log already exists
   def reinit(self, item):
-    if os.path.exists('%s/%s.log' % (self.root, item)):
+    if os.path.exists('%s/%s.log' % (self.root, item)) and os.getenv('LOCAL_RANK')=='0':
       if self.reinitialize:
         # Only print the removal mess
         if 'sv' in item :
@@ -877,34 +877,35 @@ def sample(G, z_, y_, config):
 def sample_sheet(G, classes_per_sheet, num_classes, samples_per_class, parallel,
                  samples_root, experiment_name, folder_number, z_=None):
   # Prepare sample directory
-  if not os.path.isdir('%s/%s' % (samples_root, experiment_name)):
-    os.mkdir('%s/%s' % (samples_root, experiment_name))
-  if not os.path.isdir('%s/%s/%d' % (samples_root, experiment_name, folder_number)):
-    os.mkdir('%s/%s/%d' % (samples_root, experiment_name, folder_number))
-  # loop over total number of sheets
-  for i in range(num_classes // classes_per_sheet):
-    ims = []
-    y = torch.arange(i * classes_per_sheet, (i + 1) * classes_per_sheet, device='cuda')
-    for j in range(samples_per_class):
-      if (z_ is not None) and hasattr(z_, 'sample_') and classes_per_sheet <= z_.size(0):
-        z_.sample_()
-      else:
-        z_ = torch.randn(classes_per_sheet, G.dim_z, device='cuda')        
-      with torch.no_grad():
-        if parallel:
-          o = nn.parallel.data_parallel(G, (z_[:classes_per_sheet], G.shared(y)))
+  if os.getenv('LOCAL_RANK')=='0':
+    if not os.path.isdir('%s/%s' % (samples_root, experiment_name)):
+      os.mkdir('%s/%s' % (samples_root, experiment_name))
+    if not os.path.isdir('%s/%s/%d' % (samples_root, experiment_name, folder_number)):
+      os.mkdir('%s/%s/%d' % (samples_root, experiment_name, folder_number))
+    # loop over total number of sheets
+    for i in range(num_classes // classes_per_sheet):
+      ims = []
+      y = torch.arange(i * classes_per_sheet, (i + 1) * classes_per_sheet, device='cuda')
+      for j in range(samples_per_class):
+        if (z_ is not None) and hasattr(z_, 'sample_') and classes_per_sheet <= z_.size(0):
+          z_.sample_()
         else:
-          o = G(z_[:classes_per_sheet], G.shared(y))
+          z_ = torch.randn(classes_per_sheet, G.dim_z, device='cuda')        
+        with torch.no_grad():
+          if parallel:
+            o = nn.parallel.data_parallel(G, (z_[:classes_per_sheet], G.shared(y)))
+          else:
+            o = G(z_[:classes_per_sheet], G.model.shared(y))
 
-      ims += [o.data.cpu()]
-    # This line should properly unroll the images
-    out_ims = torch.stack(ims, 1).view(-1, ims[0].shape[1], ims[0].shape[2], 
-                                       ims[0].shape[3]).data.float().cpu()
-    # The path for the samples
-    image_filename = '%s/%s/%d/samples%d.jpg' % (samples_root, experiment_name, 
-                                                 folder_number, i)
-    torchvision.utils.save_image(out_ims, image_filename,
-                                 nrow=samples_per_class, normalize=True)
+        ims += [o.data.cpu()]
+      # This line should properly unroll the images
+      out_ims = torch.stack(ims, 1).view(-1, ims[0].shape[1], ims[0].shape[2], 
+                                        ims[0].shape[3]).data.float().cpu()
+      # The path for the samples
+      image_filename = '%s/%s/%d/samples%d.jpg' % (samples_root, experiment_name, 
+                                                  folder_number, i)
+      torchvision.utils.save_image(out_ims, image_filename,
+                                  nrow=samples_per_class, normalize=True)
 
 
 # Interp function; expects x0 and x1 to be of shape (shape0, 1, rest_of_shape..)
@@ -918,36 +919,37 @@ def interp(x0, x1, num_midpoints):
 def interp_sheet(G, num_per_sheet, num_midpoints, num_classes, parallel,
                  samples_root, experiment_name, folder_number, sheet_number=0,
                  fix_z=False, fix_y=False, device='cuda'):
-  # Prepare zs and ys
-  if fix_z: # If fix Z, only sample 1 z per row
-    zs = torch.randn(num_per_sheet, 1, G.dim_z, device=device)
-    zs = zs.repeat(1, num_midpoints + 2, 1).view(-1, G.dim_z)
-  else:
-    zs = interp(torch.randn(num_per_sheet, 1, G.dim_z, device=device),
-                torch.randn(num_per_sheet, 1, G.dim_z, device=device),
-                num_midpoints).view(-1, G.dim_z)
-  if fix_y: # If fix y, only sample 1 z per row
-    ys = sample_1hot(num_per_sheet, num_classes)
-    ys = G.shared(ys).view(num_per_sheet, 1, -1)
-    ys = ys.repeat(1, num_midpoints + 2, 1).view(num_per_sheet * (num_midpoints + 2), -1)
-  else:
-    ys = interp(G.shared(sample_1hot(num_per_sheet, num_classes)).view(num_per_sheet, 1, -1),
-                G.shared(sample_1hot(num_per_sheet, num_classes)).view(num_per_sheet, 1, -1),
-                num_midpoints).view(num_per_sheet * (num_midpoints + 2), -1)
-  # Run the net--note that we've already passed y through G.shared.
-  if G.fp16:
-    zs = zs.half()
-  with torch.no_grad():
-    if parallel:
-      out_ims = nn.parallel.data_parallel(G, (zs, ys)).data.cpu()
+  if os.getenv('LOCAL_RANK')=='0':
+    # Prepare zs and ys
+    if fix_z: # If fix Z, only sample 1 z per row
+      zs = torch.randn(num_per_sheet, 1, G.dim_z, device=device)
+      zs = zs.repeat(1, num_midpoints + 2, 1).view(-1, G.dim_z)
     else:
-      out_ims = G(zs, ys).data.cpu()
-  interp_style = '' + ('Z' if not fix_z else '') + ('Y' if not fix_y else '')
-  image_filename = '%s/%s/%d/interp%s%d.jpg' % (samples_root, experiment_name,
-                                                folder_number, interp_style,
-                                                sheet_number)
-  torchvision.utils.save_image(out_ims, image_filename,
-                               nrow=num_midpoints + 2, normalize=True)
+      zs = interp(torch.randn(num_per_sheet, 1, G.dim_z, device=device),
+                  torch.randn(num_per_sheet, 1, G.dim_z, device=device),
+                  num_midpoints).view(-1, G.dim_z)
+    if fix_y: # If fix y, only sample 1 z per row
+      ys = sample_1hot(num_per_sheet, num_classes)
+      ys = G.model.shared(ys).view(num_per_sheet, 1, -1)
+      ys = ys.repeat(1, num_midpoints + 2, 1).view(num_per_sheet * (num_midpoints + 2), -1)
+    else:
+      ys = interp(G.model.shared(sample_1hot(num_per_sheet, num_classes)).view(num_per_sheet, 1, -1),
+                  G.model.shared(sample_1hot(num_per_sheet, num_classes)).view(num_per_sheet, 1, -1),
+                  num_midpoints).view(num_per_sheet * (num_midpoints + 2), -1)
+    # Run the net--note that we've already passed y through G.shared.
+    if G.fp16:
+      zs = zs.half()
+    with torch.no_grad():
+      if parallel:
+        out_ims = nn.parallel.data_parallel(G, (zs, ys)).data.cpu()
+      else:
+        out_ims = G(zs, ys).data.cpu()
+    interp_style = '' + ('Z' if not fix_z else '') + ('Y' if not fix_y else '')
+    image_filename = '%s/%s/%d/interp%s%d.jpg' % (samples_root, experiment_name,
+                                                  folder_number, interp_style,
+                                                  sheet_number)
+    torchvision.utils.save_image(out_ims, image_filename,
+                                nrow=num_midpoints + 2, normalize=True)
 
 
 # Convenience debugging function to print out gradnorms and shape from each layer
@@ -1099,7 +1101,7 @@ def prepare_z_y(G_batch_size, dim_z, nclasses, device='cuda',
 
 
 def initiate_standing_stats(net):
-  for module in net.modules():
+  for module in net.model.modules():
     if hasattr(module, 'accumulate_standing'):
       module.reset_stats()
       module.accumulate_standing = True
@@ -1112,7 +1114,7 @@ def accumulate_standing_stats(net, z, y, nclasses, num_accumulations=16):
     with torch.no_grad():
       z.normal_()
       y.random_(0, nclasses)
-      x = net(z, net.shared(y)) # No need to parallelize here unless using syncbn
+      x = net(z, net.model.shared(y)) # No need to parallelize here unless using syncbn
   # Set to eval mode
   net.eval() 
 

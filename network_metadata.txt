@@ -1,0 +1,183 @@
+Number of params in G: 70433988 D: 87982370
+Inception Metrics will be saved to logs/BigGAN_I128_hdf5_seed0_Gch96_Dch96_bs64_nDa8_nGa8_Glr1.0e-04_Dlr4.0e-04_Gnlinplace_relu_Dnlinplace_relu_Ginitortho_Dinitortho_Gattn64_Dattn64_Gshared_hier_ema_log.jsonl
+Training Metrics will be saved to logs/BigGAN_I128_hdf5_seed0_Gch96_Dch96_bs64_nDa8_nGa8_Glr1.0e-04_Dlr4.0e-04_Gnlinplace_relu_Dnlinplace_relu_Ginitortho_Dinitortho_Gattn64_Dattn64_Gshared_hier_ema
+Using dataset root location data/ILSVRC128.hdf5
+Loading data/ILSVRC128.hdf5 into memory...
+Adding attention layer in G at resolution 64
+Initializing EMA parameters to be source parameters...
+G_D(
+  (G): Generator(
+    (activation): ReLU(inplace=True)
+    (shared): Embedding(1000, 128)
+    (linear): SNLinear(in_features=20, out_features=24576, bias=True)
+    (blocks): ModuleList(
+      (0): ModuleList(
+        (0): GBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(1536, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(1536, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(1536, 1536, kernel_size=(1, 1), stride=(1, 1))
+          (bn1): ccbn(
+            out: 1536, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=1536, bias=False)
+            (bias): SNLinear(in_features=148, out_features=1536, bias=False)
+          )
+          (bn2): ccbn(
+            out: 1536, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=1536, bias=False)
+            (bias): SNLinear(in_features=148, out_features=1536, bias=False)
+          )
+        )
+      )
+      (1): ModuleList(
+        (0): GBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(1536, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(768, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(1536, 768, kernel_size=(1, 1), stride=(1, 1))
+          (bn1): ccbn(
+            out: 1536, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=1536, bias=False)
+            (bias): SNLinear(in_features=148, out_features=1536, bias=False)
+          )
+          (bn2): ccbn(
+            out: 768, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=768, bias=False)
+            (bias): SNLinear(in_features=148, out_features=768, bias=False)
+          )
+        )
+      )
+      (2): ModuleList(
+        (0): GBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(768, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(768, 384, kernel_size=(1, 1), stride=(1, 1))
+          (bn1): ccbn(
+            out: 768, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=768, bias=False)
+            (bias): SNLinear(in_features=148, out_features=768, bias=False)
+          )
+          (bn2): ccbn(
+            out: 384, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=384, bias=False)
+            (bias): SNLinear(in_features=148, out_features=384, bias=False)
+          )
+        )
+      )
+      (3): ModuleList(
+        (0): GBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(384, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(192, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(384, 192, kernel_size=(1, 1), stride=(1, 1))
+          (bn1): ccbn(
+            out: 384, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=384, bias=False)
+            (bias): SNLinear(in_features=148, out_features=384, bias=False)
+          )
+          (bn2): ccbn(
+            out: 192, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=192, bias=False)
+            (bias): SNLinear(in_features=148, out_features=192, bias=False)
+          )
+        )
+        (1): Attention(
+          (theta): SNConv2d(192, 24, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (phi): SNConv2d(192, 24, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (g): SNConv2d(192, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (o): SNConv2d(96, 192, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+      )
+      (4): ModuleList(
+        (0): GBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(192, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(96, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(192, 96, kernel_size=(1, 1), stride=(1, 1))
+          (bn1): ccbn(
+            out: 192, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=192, bias=False)
+            (bias): SNLinear(in_features=148, out_features=192, bias=False)
+          )
+          (bn2): ccbn(
+            out: 96, in: 148, cross_replica=False
+            (gain): SNLinear(in_features=148, out_features=96, bias=False)
+            (bias): SNLinear(in_features=148, out_features=96, bias=False)
+          )
+        )
+      )
+    )
+    (output_layer): Sequential(
+      (0): bn()
+      (1): ReLU(inplace=True)
+      (2): SNConv2d(96, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    )
+  )
+  (D): Discriminator(
+    (activation): ReLU(inplace=True)
+    (blocks): ModuleList(
+      (0): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (downsample): AvgPool2d(kernel_size=2, stride=2, padding=0)
+          (conv1): SNConv2d(3, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(96, 96, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(3, 96, kernel_size=(1, 1), stride=(1, 1))
+        )
+        (1): Attention(
+          (theta): SNConv2d(96, 12, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (phi): SNConv2d(96, 12, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (g): SNConv2d(96, 48, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          (o): SNConv2d(48, 96, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        )
+      )
+      (1): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (downsample): AvgPool2d(kernel_size=2, stride=2, padding=0)
+          (conv1): SNConv2d(96, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(192, 192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(96, 192, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+      (2): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (downsample): AvgPool2d(kernel_size=2, stride=2, padding=0)
+          (conv1): SNConv2d(192, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(192, 384, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+      (3): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (downsample): AvgPool2d(kernel_size=2, stride=2, padding=0)
+          (conv1): SNConv2d(384, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(768, 768, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(384, 768, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+      (4): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (downsample): AvgPool2d(kernel_size=2, stride=2, padding=0)
+          (conv1): SNConv2d(768, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(1536, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv_sc): SNConv2d(768, 1536, kernel_size=(1, 1), stride=(1, 1))
+        )
+      )
+      (5): ModuleList(
+        (0): DBlock(
+          (activation): ReLU(inplace=True)
+          (conv1): SNConv2d(1536, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+          (conv2): SNConv2d(1536, 1536, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+      )
+    )
+    (linear): SNLinear(in_features=1536, out_features=1, bias=True)
+    (embed): SNEmbedding(1000, 1536)
+  )
+)
+Number of params in G: 70433988 D: 87982370

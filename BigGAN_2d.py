@@ -9,6 +9,10 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.nn import Parameter as P
 
+from colossalai.nn.layer.wrapper.lambda_wrapper import LambdaWrapper
+
+import colossalai.nn as col_nn
+
 import layers
 from sync_batchnorm import SynchronizedBatchNorm2d as SyncBatchNorm2d
 
@@ -129,11 +133,12 @@ class Generator(nn.Module):
         else:
             self.which_conv = functools.partial(
                 nn.Conv2d, kernel_size=3, padding=1)
-            self.which_linear = nn.Linear
+            # self.which_linear = nn.Linear
+            self.which_linear = col_nn.Linear
 
         # We use a non-spectral-normed embedding here regardless;
         # For some reason applying SN to G's embedding seems to randomly cripple G
-        self.which_embedding = nn.Embedding
+        self.which_embedding = col_nn.Embedding
         bn_linear = (functools.partial(self.which_linear, bias=False) if self.G_shared
                      else self.which_embedding)
         self.which_bn = functools.partial(layers.ccbn,
@@ -386,8 +391,8 @@ class Discriminator(nn.Module):
         self.param_count = 0
         for module in self.modules():
             if (isinstance(module, nn.Conv2d)
-                or isinstance(module, nn.Linear)
-                    or isinstance(module, nn.Embedding)):
+                or isinstance(module, col_nn.Linear)
+                    or isinstance(module, col_nn.Embedding)):
                 if self.init == 'ortho':
                     init.orthogonal_(module.weight)
                 elif self.init == 'N02':
@@ -398,6 +403,21 @@ class Discriminator(nn.Module):
                     print('Init style not recognized...')
                 self.param_count += sum([p.data.nelement()
                                         for p in module.parameters()])
+            # elif (isinstance(module, col_nn.Linear)
+            #      or isinstance(module, col_nn.Embedding)):
+            #     if self.init == 'ortho':
+            #         _orthogonal=LambdaWrapper(init.orthogonal_)
+            #         _orthogonal(module.weight)
+            #     elif self.init == 'N02':
+            #         _normal=LambdaWrapper(init.normal_)
+            #         _normal(module.weight, 0, 0.02)
+            #     elif self.init in ['glorot', 'xavier']:
+            #         _xavier_uniform=LambdaWrapper(init.xavier_uniform_)
+            #         _xavier_uniform(module.weight)
+            #     else:
+            #         print('Init style not recognized...')
+            #     self.param_count += sum([p.data.nelement()
+            #                             for p in module.parameters()])
         print('Param count for D''s initialized parameters: %d' %
               self.param_count)
 
